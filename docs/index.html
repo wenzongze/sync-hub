@@ -171,11 +171,10 @@
 
 <script>
 // ============ 配置 ============
-// 直连 Supabase REST API（anon key 是公开的，安全无虞）
-const SB_URL = 'https://uqljsiafhwryhlrdgcbw.supabase.co/rest/v1';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxbGpzaWFmaHdyeWhscmRnY2J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NjA3NjksImV4cCI6MjA2NDUzNjc2OX0.WUhHpM_NfzUvMPQjNSf7YrQZPXMwXHZxVBqP6x9jM3M';
+// 通过 Cloudflare Workers 代理访问 Supabase（解决网络连通性问题）
+const API_BASE = 'https://sync-hub-api.359083341.workers.dev';
 
-// 公开笔记本白名单
+// 公开笔记本白名单（与 Worker 保持一致）
 const PUBLIC_BOX_IDS = [
   '20210921205505-zg5tr18',   // 伤寒金匮
   '20231006235731-0xw7i75',   // 中医课程导航
@@ -189,82 +188,35 @@ const NOTEBOOK_NAMES = {
   '20241212005715-77ixhip': '方剂'
 };
 
-// Supabase REST 请求封装
-async function sbFetch(path, params = {}) {
-  const url = new URL(`${SB_URL}/${path}`);
-  for (const [k, v] of Object.entries(params)) {
-    if (v !== undefined && v !== null && v !== '') url.searchParams.set(k, String(v));
-  }
-  const r = await fetch(url, {
-    headers: { 'apikey': SB_KEY, 'Authorization': `Bearer ${SB_KEY}` }
-  });
-  if (!r.ok) throw new Error(`Supabase ${r.status}`);
-  return r.json();
-}
-
 // ============ API ============
 async function searchBlocks(q) {
-  const filter = PUBLIC_BOX_IDS.map(id => `box_id=eq.${id}`).join(',');
-  const r = await sbFetch('blocks', {
-    select: 'id,box_id,type,markdown,tags,version,updated_at',
-    deleted: 'eq.false',
-    or: `(${filter})`,
-    markdown: `ilike.*${q}*`,
-    order: 'updated_at.desc',
-    limit: 50
-  });
-  return r || [];
+  const r = await fetch(`${API_BASE}/api/public/search?q=${encodeURIComponent(q)}`);
+  if (!r.ok) throw new Error(`搜索失败 (${r.status})`);
+  const data = await r.json();
+  return data.results || [];
 }
 
 async function loadNotebooks() {
-  const results = [];
-  for (const boxId of PUBLIC_BOX_IDS) {
-    const r = await sbFetch('blocks', {
-      select: 'box_id',
-      box_id: `eq.${boxId}`,
-      deleted: 'eq.false',
-      limit: 1,
-      head: 'true',
-      prefer: 'count=exact'
-    });
-    results.push({ box_id: boxId, block_count: 0 });
-  }
-  // 单独获取每个 notebook 的 count（因为 head 模式不返回 body）
-  for (const nb of results) {
-    const data = await sbFetch('blocks', {
-      select: 'id',
-      box_id: `eq.${nb.box_id}`,
-      deleted: 'eq.false',
-      limit: 100000
-    });
-    nb.block_count = Array.isArray(data) ? data.length : 0;
-  }
-  return results.map(n => ({
+  const r = await fetch(`${API_BASE}/api/public/notebooks`);
+  if (!r.ok) throw new Error(`加载笔记本失败 (${r.status})`);
+  const data = await r.json();
+  return (data.notebooks || []).map(n => ({
     ...n,
     name: NOTEBOOK_NAMES[n.box_id] || n.box_id
   }));
 }
 
 async function loadBlocks(boxId) {
-  const data = await sbFetch('blocks', {
-    select: 'id,type,markdown,tags,version,updated_at',
-    box_id: `eq.${boxId}`,
-    deleted: 'eq.false',
-    order: 'updated_at.desc',
-    limit: 500
-  });
-  return Array.isArray(data) ? data : [];
+  const r = await fetch(`${API_BASE}/api/public/notebooks/${boxId}/blocks`);
+  if (!r.ok) throw new Error(`加载内容失败 (${r.status})`);
+  const data = await r.json();
+  return data.blocks || [];
 }
 
 async function loadSingleBlock(id) {
-  const r = await sbFetch('blocks', {
-    select: 'id,type,markdown,tags,version,updated_at,box_id',
-    id: `eq.${id}`,
-    deleted: 'eq.false',
-    limit: 1
-  });
-  if (!r || !r.length) throw new Error('not found');
-  return r[0];
+  const r = await fetch(`${API_BASE}/api/public/blocks/${id}`);
+  if (!r.ok) throw new Error(`加载详情失败 (${r.status})`);
+  return r.json();
 }
 
 // ============ 页面逻辑 ============

@@ -262,13 +262,11 @@ const SOURCES = [
 // 公开笔记本白名单
 const PUBLIC_BOX_IDS = [
   '20210921205505-zg5tr18',   // 伤寒金匮
-  '20231006235731-0xw7i75',   // 中医课程导航
   '20241212005715-77ixhip'    // 方剂
 ];
 
 const NOTEBOOK_NAMES = {
   '20210921205505-zg5tr18': '伤寒金匮',
-  '20231006235731-0xw7i75': '中医课程导航',
   '20241212005715-77ixhip': '方剂'
 };
 
@@ -389,10 +387,6 @@ function renderBlock(b) {
   return `
     <div class="block type-${b.type}">
       <div class="md">${md}</div>
-      <div class="meta">
-        <span>${b.type || 'p'}</span>
-        <span>v${b.version}</span>
-      </div>
     </div>
   `;
 }
@@ -405,9 +399,11 @@ function simpleMarkdown(md) {
     .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
     // 链接
     .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
-    // 思源块引用 ((id 'text')) → 显示文本
-    .replace(/\(\(([a-z0-9]+)\s+'([^']*)'\)\)/gi, '<em>$2</em>')
-    .replace(/\(\(([a-z0-9]+)\s+"([^"]*)"\)\)/gi, '<em>$2</em>')
+    // 思源块引用 ((id 'text')) → 只显示文本名称
+    .replace(/\(\([a-z0-9]+\s+'([^']*)'\)\)/gi, '<em>$1</em>')
+    .replace(/\(\([a-z0-9]+\s+"([^"]*)"\)\)/gi, '<em>$1</em>')
+    // 思源块引用纯 ID（无名称）→ 隐藏
+    .replace(/\(\([a-z0-9]+\)\)/gi, '')
     // 标题
     .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
     .replace(/^### (.+)$/gm, '<h3>$1</h3>')
@@ -450,7 +446,7 @@ async function doSearch() {
       return `
         <div class="search-result" onclick="showSingleBlock('${r.id}')">
           <div>${md}</div>
-          <div class="src">${NOTEBOOK_NAMES[r.box_id] || r.box_id?.slice(0,12)} · v${r.version}</div>
+          <div class="src">${NOTEBOOK_NAMES[r.box_id] || r.box_id?.slice(0,12)}</div>
         </div>
       `;
     }).join('');
@@ -471,11 +467,6 @@ async function showSingleBlock(id) {
   document.getElementById('main').innerHTML = `
     <div class="block type-${b.type}">
       <div class="md">${simpleMarkdown(b.markdown || '')}</div>
-      <div class="meta">
-        <span>${b.type || 'p'}</span>
-        <span>v${b.version}</span>
-        <span>${NOTEBOOK_NAMES[b.box_id] || b.box_id?.slice(0,12)}</span>
-      </div>
     </div>
   `;
 }

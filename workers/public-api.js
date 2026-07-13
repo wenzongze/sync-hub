@@ -3,12 +3,11 @@
 
 const PUBLIC_BOX_IDS = [
   '20210921205505-zg5tr18',   // 伤寒金匮
-  '20231006235731-0xw7i75',   // 中医课程导航
   '20241212005715-77ixhip'    // 方剂
 ];
 
 const SUPABASE_URL = 'https://uqljsiafhwryhlrdgcbw.supabase.co';
-const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxbGpzaWFmaHdyeWhscmRnY2J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NjA3NjksImV4cCI6MjA2NDUzNjc2OX0.WUhHpM_NfzUvMPQjNSf7YrQZPXMwXHZxVBqP6x9jM3M';
+const SUPABASE_KEY = 'sb_publishable_ywynvtfXD0gEqmOBkVnjTw_6dKgXCs7';
 
 // Supabase REST API 封装（带超时）
 async function supabaseQuery(path, params = {}) {

@@ -195,12 +195,11 @@ const SOURCES = [
   {
     name: 'supabase',
     sb: 'https://uqljsiafhwryhlrdgcbw.supabase.co/rest/v1',
-    sk: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVxbGpzaWFmaHdyeWhscmRnY2J3Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg5NjA3NjksImV4cCI6MjA2NDUzNjc2OX0.WUhHpM_NfzUvMPQjNSf7YrQZPXMwXHZxVBqP6x9jM3M',
+    sk: 'sb_publishable_ywynvtfXD0gEqmOBkVnjTw_6dKgXCs7',
     async sbFetch(path, params) {
-      const u = new URL(`${this.sb}/blocks`);
-      u.searchParams.set('select', params.select);
+      const u = new URL(`${this.sb}/${path}`);
       for (const [k, v] of Object.entries(params)) {
-        if (k !== 'select' && v !== undefined && v !== null && v !== '')
+        if (v !== undefined && v !== null && v !== '')
           u.searchParams.set(k, String(v));
       }
       const r = await fetchWithTimeout(u, { headers: { apikey: this.sk, Authorization: `Bearer ${this.sk}` } }, 8000);
@@ -296,10 +295,13 @@ async function getSource() {
   if (activeSource) return activeSource;
   // 并行探测所有数据源
   const results = await Promise.allSettled(
-    SOURCES.map(s => fetchWithTimeout(`${s.base || s.sb}/rest/v1/blocks?select=id&limit=1`,
-      s.sk ? { headers: { apikey: s.sk, Authorization: `Bearer ${s.sk}` } } : {}, 5000)
-      .then(() => s)
-    )
+    SOURCES.map(s => {
+      const probeUrl = s.sb
+        ? `${s.sb}/blocks?select=id&limit=1`
+        : `${s.base}/api/public/notebooks`;
+      const headers = s.sk ? { apikey: s.sk, Authorization: `Bearer ${s.sk}` } : {};
+      return fetchWithTimeout(probeUrl, { headers }, 5000).then(() => s);
+    })
   );
   for (let i = 0; i < results.length; i++) {
     if (results[i].status === 'fulfilled') {

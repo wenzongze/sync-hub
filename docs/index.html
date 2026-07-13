@@ -371,7 +371,24 @@ async function selectBox(boxId) {
   main.innerHTML = '<div class="loader"></div>';
 
   try {
-    const blocks = await loadBlocks(boxId);
+    let blocks = await loadBlocks(boxId);
+    if (!blocks.length) {
+      main.innerHTML = '<div class="empty"><p>此笔记本暂无内容</p></div>';
+      return;
+    }
+    // 过滤：跳过纯块引用目录页（markdown 仅包含标题+块引用，无实质内容）
+    blocks = blocks.filter(b => {
+      const raw = (b.markdown || '').trim();
+      if (!raw) return false;
+      // 纯块引用目录：如 "### ((id '名称'))" 或 "## A" 等
+      const stripped = raw
+        .replace(/^#{1,4}\s*\(\([a-z0-9-]+\s+'[^']*'\)\)\s*$/gm, '')
+        .replace(/^#{1,4}\s*\(\([a-z0-9-]+\s+"[^"]*"\)\)\s*$/gm, '')
+        .replace(/^#{1,4}\s*[A-Za-z]?\s*$/gm, '')
+        .replace(/!\[[^\]]*\]\([^)]+\)/g, '')
+        .trim();
+      return stripped.length > 0;
+    });
     if (!blocks.length) {
       main.innerHTML = '<div class="empty"><p>此笔记本暂无内容</p></div>';
       return;

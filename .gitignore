@@ -1,0 +1,5 @@
+node_modules/
+.env
+siyuan-data/
+pg-data/
+*.log

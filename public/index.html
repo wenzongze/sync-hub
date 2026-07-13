@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>中医知识库</title>
+<style>
+  :root {
+    --bg: #faf8f5;
+    --card: #fff;
+    --primary: #3d6b5e;
+    --primary-light: #e8f0ed;
+    --text: #2c2c2c;
+    --text-light: #888;
+    --border: #e8e3dd;
+    --shadow: 0 2px 12px rgba(0,0,0,.06);
+    --radius: 10px;
+    --accent: #c7a55b;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, "PingFang SC", "Noto Serif SC", "Source Han Serif SC", serif;
+    background: var(--bg); color: var(--text); line-height: 1.7;
+    min-height: 100vh;
+  }
+
+  /* Header */
+  header {
+    background: linear-gradient(135deg, #2b5c50, #3d6b5e);
+    color: #fff;
+    padding: 16px 20px;
+    position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15);
+  }
+  header .inner {
+    max-width: 960px; margin: 0 auto;
+    display: flex; gap: 10px; align-items: center;
+    flex-wrap: wrap;
+  }
+  header h1 {
+    font-size: 20px; font-weight: 700;
+    margin-right: auto;
+    white-space: nowrap;
+  }
+  header h1 span { color: var(--accent); }
+  header input {
+    flex: 1; min-width: 180px;
+    padding: 8px 14px; border: none; border-radius: 20px;
+    font-size: 14px; outline: none;
+    background: rgba(255,255,255,.15); color: #fff;
+    transition: background .2s;
+  }
+  header input::placeholder { color: rgba(255,255,255,.55); }
+  header input:focus { background: rgba(255,255,255,.25); }
+  header button {
+    padding: 8px 16px; border: none; border-radius: 20px;
+    background: rgba(255,255,255,.2); color: #fff;
+    font-size: 13px; cursor: pointer; transition: background .2s;
+    white-space: nowrap;
+  }
+  header button:hover { background: rgba(255,255,255,.35); }
+  header button.active { background: var(--accent); color: #2c2c2c; font-weight: 600; }
+
+  /* Layout */
+  .layout { display: flex; max-width: 1200px; margin: 0 auto; min-height: calc(100vh - 80px); }
+
+  /* Sidebar */
+  aside {
+    width: 260px; min-width: 260px;
+    background: var(--card); border-right: 1px solid var(--border);
+    padding: 12px 0; overflow-y: auto;
+  }
+  aside .nb-title {
+    padding: 8px 16px; font-size: 11px; color: var(--text-light);
+    text-transform: uppercase; letter-spacing: 1px;
+  }
+  aside .nb-item {
+    padding: 8px 16px; cursor: pointer; font-size: 14px;
+    border-left: 3px solid transparent; transition: all .15s;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  aside .nb-item:hover { background: var(--primary-light); }
+  aside .nb-item.active { background: var(--primary-light); border-left-color: var(--primary); font-weight: 600; }
+  aside .nb-item .count {
+    font-size: 11px; color: var(--text-light); background: #f0f0f0;
+    padding: 1px 8px; border-radius: 10px;
+  }
+
+  /* Main */
+  main { flex: 1; padding: 20px 24px; overflow-y: auto; }
+  main .empty { text-align: center; padding: 80px 20px; color: var(--text-light); }
+  main .empty svg { width: 60px; height: 60px; opacity: .3; margin-bottom: 16px; }
+
+  /* Block cards */
+  .block {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 16px 20px; margin-bottom: 12px;
+    border-left: 4px solid var(--primary);
+  }
+  .block.type-h { border-left-color: var(--primary); font-size: 18px; font-weight: 700; }
+  .block.type-d { border-left-color: var(--accent); font-size: 20px; font-weight: 700; }
+  .block.type-p { border-left-color: #ddd; }
+  .block.type-l { border-left-color: #b8d4c8; }
+  .block.type-i { border-left-color: #d4c8b8; }
+  .block .meta {
+    font-size: 11px; color: var(--text-light); margin-top: 8px;
+    display: flex; gap: 12px;
+  }
+
+  /* Markdown rendering */
+  .block .md { word-break: break-word; }
+  .block .md h1,.block .md h2,.block .md h3,.block .md h4 { margin: .3em 0; }
+  .block .md h1 { font-size: 1.4em; }
+  .block .md h2 { font-size: 1.2em; }
+  .block .md h3 { font-size: 1.1em; }
+  .block .md ul,.block .md ol { padding-left: 1.5em; }
+  .block .md a { color: var(--primary); text-decoration: none; }
+  .block .md img { max-width: 100%; border-radius: 6px; margin: 8px 0; }
+  .block .md blockquote { border-left: 3px solid var(--accent); padding-left: 12px; color: #666; margin: 8px 0; }
+  .block .md code { background: #f4f4f4; padding: 2px 6px; border-radius: 4px; font-size: .9em; }
+  .block .md table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+  .block .md th,.block .md td { border: 1px solid var(--border); padding: 6px 10px; text-align: left; }
+  .block .md th { background: var(--primary-light); }
+
+  /* Search results */
+  .search-result {
+    background: var(--card); border-radius: var(--radius);
+    box-shadow: var(--shadow); padding: 14px 18px; margin-bottom: 8px;
+    cursor: pointer; transition: transform .1s;
+  }
+  .search-result:hover { transform: translateY(-1px); }
+  .search-result .highlight { color: var(--primary); font-weight: 600; }
+  .search-result .src { font-size: 11px; color: var(--text-light); margin-top: 4px; }
+
+  /* Loader */
+  .loader { text-align: center; padding: 40px; color: var(--text-light); }
+  .loader::after { content: '加载中...'; }
+
+  /* Responsive */
+  @media (max-width: 700px) {
+    .layout { flex-direction: column; }
+    aside { width: 100%; min-width: 0; border-right: none; border-bottom: 1px solid var(--border); }
+    main { padding: 12px 14px; }
+    header h1 { font-size: 16px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="inner">
+    <h1>中医<span>知识库</span></h1>
+    <input id="searchInput" placeholder="搜索：桂枝汤 / 太阳病 / 方剂..."
+           onkeydown="if(event.key==='Enter')doSearch()" autocomplete="off">
+    <button id="searchBtn" onclick="doSearch()">搜索</button>
+    <button id="browseBtn" class="active" onclick="showBrowse()">浏览</button>
+  </div>
+</header>
+
+<div class="layout">
+  <aside id="sidebar">
+    <div class="loader"></div>
+  </aside>
+  <main id="main">
+    <div class="empty">
+      <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/></svg>
+      <p>选择左侧笔记本，或搜索关键词</p>
+    </div>
+  </main>
+</div>
+
+<script>
+// ============ 配置 ============
+// 部署到 Vercel 后，把下面地址换成你的 Vercel 域名
+// 例如: https://sync-hub.vercel.app
+const API_BASE = 'https://YOUR_VERCEL_DOMAIN.vercel.app';
+
+// 公开笔记本白名单（与 api/public.js PUBLIC_BOX_IDS 保持一致）
+const PUBLIC_BOX_IDS = [
+  '20210921205505-zg5tr18',   // 伤寒金匮
+  '20231006235731-0xw7i75',   // 中医课程导航
+  '20241212005715-77ixhip'    // 方剂
+];
+
+// 笔记本名称映射（可选，方便显示中文名）
+const NOTEBOOK_NAMES = {
+  '20210921205505-zg5tr18': '伤寒金匮',
+  '20231006235731-0xw7i75': '中医课程导航',
+  '20241212005715-77ixhip': '方剂'
+};
+
+// ============ API ============
+async function searchBlocks(q) {
+  const r = await fetch(`${API_BASE}/api/public/search?q=${encodeURIComponent(q)}`);
+  return (await r.json()).results || [];
+}
+
+async function loadNotebooks() {
+  const r = await fetch(`${API_BASE}/api/public/notebooks`);
+  const data = await r.json();
+  // 注入中文名
+  return (data.notebooks || []).map(n => ({
+    ...n,
+    name: NOTEBOOK_NAMES[n.box_id] || n.box_id
+  }));
+}
+
+async function loadBlocks(boxId) {
+  const r = await fetch(`${API_BASE}/api/public/notebooks/${boxId}/blocks`);
+  return (await r.json()).blocks || [];
+}
+
+async function loadSingleBlock(id) {
+  const r = await fetch(`${API_BASE}/api/public/blocks/${id}`);
+  return r.json();
+}
+
+// ============ 页面逻辑 ============
+
+async function init() {
+  await loadSidebar();
+}
+
+async function loadSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  try {
+    const notebooks = await loadNotebooks();
+    if (!notebooks.length) {
+      sidebar.innerHTML = '<div class="nb-title">暂无公开笔记本</div>';
+      return;
+    }
+    sidebar.innerHTML = `
+      <div class="nb-title">笔记本 (${notebooks.length})</div>
+      ${notebooks.map(n => `
+        <div class="nb-item" onclick="selectBox('${n.box_id}')" data-box="${n.box_id}">
+          <span>${n.name || n.box_id.slice(0,12)}</span>
+          <span class="count">${n.block_count}</span>
+        </div>
+      `).join('')}
+    `;
+  } catch (e) {
+    sidebar.innerHTML = '<div class="nb-title">加载失败</div>';
+    console.error(e);
+  }
+}
+
+async function selectBox(boxId) {
+  currentBox = boxId;
+  document.querySelectorAll('.nb-item').forEach(el => el.classList.remove('active'));
+  document.querySelector(`[data-box="${boxId}"]`)?.classList.add('active');
+
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="loader"></div>';
+
+  try {
+    const blocks = await loadBlocks(boxId);
+    if (!blocks.length) {
+      main.innerHTML = '<div class="empty"><p>此笔记本暂无内容</p></div>';
+      return;
+    }
+    main.innerHTML = blocks.map(b => renderBlock(b)).join('');
+  } catch (e) {
+    main.innerHTML = `<div class="empty"><p>加载失败: ${e.message}</p></div>`;
+  }
+}
+
+function renderBlock(b) {
+  const md = simpleMarkdown(b.markdown || '');
+  return `
+    <div class="block type-${b.type}">
+      <div class="md">${md}</div>
+      <div class="meta">
+        <span>${b.type || 'p'}</span>
+        <span>v${b.version}</span>
+      </div>
+    </div>
+  `;
+}
+
+// 简单 Markdown 转 HTML（轻量级）
+function simpleMarkdown(md) {
+  if (!md) return '';
+  return md
+    // 图片
+    .replace(/!\[([^\]]*)\]\(([^)]+)\)/g, '<img src="$2" alt="$1">')
+    // 链接
+    .replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>')
+    // 思源块引用 ((id 'text')) → 显示文本
+    .replace(/\(\(([a-z0-9]+)\s+'([^']*)'\)\)/gi, '<em>$2</em>')
+    .replace(/\(\(([a-z0-9]+)\s+"([^"]*)"\)\)/gi, '<em>$2</em>')
+    // 标题
+    .replace(/^#### (.+)$/gm, '<h4>$1</h4>')
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    // 粗体/斜体
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    // 行内代码
+    .replace(/`([^`]+)`/g, '<code>$1</code>')
+    // 列表
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
+    // 换行
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/\n/g, '<br>');
+}
+
+// 搜索
+async function doSearch() {
+  const q = document.getElementById('searchInput').value.trim();
+  if (!q) return;
+
+  document.getElementById('browseBtn').classList.remove('active');
+  document.getElementById('searchBtn').classList.add('active');
+  currentBox = null;
+  document.querySelectorAll('.nb-item').forEach(el => el.classList.remove('active'));
+
+  const main = document.getElementById('main');
+  main.innerHTML = '<div class="loader"></div>';
+
+  try {
+    const results = await searchBlocks(q);
+    if (!results.length) {
+      main.innerHTML = `<div class="empty"><p>未找到「${q}」相关结果</p></div>`;
+      return;
+    }
+    main.innerHTML = results.map(r => {
+      const md = simpleMarkdown((r.markdown || '').slice(0, 200));
+      return `
+        <div class="search-result" onclick="showSingleBlock('${r.id}')">
+          <div>${md}</div>
+          <div class="src">${NOTEBOOK_NAMES[r.box_id] || r.box_id?.slice(0,12)} · v${r.version}</div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    main.innerHTML = `<div class="empty"><p>搜索失败: ${e.message}</p></div>`;
+  }
+}
+
+function showBrowse() {
+  document.getElementById('searchBtn').classList.remove('active');
+  document.getElementById('browseBtn').classList.add('active');
+  document.getElementById('searchInput').value = '';
+  if (currentBox) selectBox(currentBox);
+}
+
+async function showSingleBlock(id) {
+  const b = await loadSingleBlock(id);
+  document.getElementById('main').innerHTML = `
+    <div class="block type-${b.type}">
+      <div class="md">${simpleMarkdown(b.markdown || '')}</div>
+      <div class="meta">
+        <span>${b.type || 'p'}</span>
+        <span>v${b.version}</span>
+        <span>${NOTEBOOK_NAMES[b.box_id] || b.box_id?.slice(0,12)}</span>
+      </div>
+    </div>
+  `;
+}
+
+// 启动
+init();
+</script>
+
+</body>
+</html>

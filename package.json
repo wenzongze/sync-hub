@@ -1,0 +1,17 @@
+{
+  "name": "sync-hub",
+  "version": "0.1.0",
+  "description": "中医知识库三方同步中枢（思源/小程序/网页）最小实操版",
+  "type": "module",
+  "scripts": {
+    "start": "node src/server.js",
+    "sync": "node src/sync.js"
+  },
+  "dependencies": {
+    "dotenv": "^17.4.2",
+    "express": "^4.19.2",
+    "node-cron": "^3.0.3",
+    "node-fetch": "^3.3.2",
+    "pg": "^8.12.0"
+  }
+}

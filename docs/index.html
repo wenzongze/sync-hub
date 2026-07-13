@@ -424,7 +424,12 @@ function simpleMarkdown(md) {
     .replace(/^(\d+)\. (.+)$/gm, '<li>$2</li>')
     // 换行
     .replace(/\n\n/g, '</p><p>')
-    .replace(/\n/g, '<br>');
+    .replace(/\n/g, '<br>')
+    // 空标题和单字母标题 → 删除（如 <h2>A</h2>、<h3> </h3>）
+    .replace(/<h[1-4]>\s*[A-Za-z]?\s*<\/h[1-4]>/gi, '')
+    // 多余空行 → 清理
+    .replace(/(<br>\s*)+/g, '<br>')
+    .replace(/^(<br>)+|(<br>)+$/g, '');
 }
 
 // 搜索
